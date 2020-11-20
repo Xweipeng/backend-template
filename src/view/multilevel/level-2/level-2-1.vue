@@ -1,5 +1,8 @@
 <template>
-  <div>level-2-1</div>
+	<Card :bordered="false">
+		<div>level-2-1</div>
+	</Card>
+
 </template>
 <script>
 export default {

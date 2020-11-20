@@ -1,5 +1,8 @@
 <template>
-  <div>多级菜单 -> 二级-2 -> 3级</div>
+  	<Card :bordered="false" :dis-hover="true">
+		<p>权限测试：</p>
+		<p>退出super_admin账号，改用admin登录，本页面不可访问</p>
+	</Card>
 </template>
 <script>
 export default {

@@ -1,12 +1,18 @@
 import Cookies from 'js-cookie'
 // cookie保存的天数
 import config from '@/config'
-import { forEach, hasOneOf, objEqual } from '@/libs/tools'
+import {
+  forEach,
+  hasOneOf,
+  objEqual
+} from '@/libs/tools'
 
 export const TOKEN_KEY = 'token'
 
 export const setToken = (token) => {
-  Cookies.set(TOKEN_KEY, token, {expires: config.cookieExpires || 1})
+  Cookies.set(TOKEN_KEY, token, {
+    expires: config.cookieExpires || 1
+  })
 }
 
 export const getToken = () => {
@@ -21,7 +27,7 @@ export const hasChild = (item) => {
 
 const showThisMenuEle = (item, access) => {
   if (item.meta && item.meta.access && item.meta.access.length) {
-	  console.log(item.meta.access, access)
+    console.log(item.meta.access, access)
     if (hasOneOf(item.meta.access, access)) return true
     else return false
   } else return true
@@ -54,13 +60,18 @@ export const getMenuByRouter = (list, access) => {
  * @returns {Array}
  */
 export const getBreadCrumbList = (route, homeRoute) => {
-  let homeItem = { ...homeRoute, icon: homeRoute.meta.icon }
+  let homeItem = {
+    ...homeRoute,
+    icon: homeRoute.meta.icon
+  }
   let routeMetched = route.matched
   if (routeMetched.some(item => item.name === homeRoute.name)) return [homeItem]
   let res = routeMetched.filter(item => {
     return item.meta === undefined || !item.meta.hide
   }).map(item => {
-    let meta = {...item.meta}
+    let meta = {
+      ...item.meta
+    }
     if (meta.title && typeof meta.title === 'function') meta.title = meta.title(route)
     let obj = {
       icon: (item.meta && item.meta.icon) || '',
@@ -72,12 +83,19 @@ export const getBreadCrumbList = (route, homeRoute) => {
   res = res.filter(item => {
     return !item.meta.hideInMenu
   })
-  return [{...homeItem, to: homeRoute.path}, ...res]
+  return [{
+    ...homeItem,
+    to: homeRoute.path
+  }, ...res]
 }
 
 export const getRouteTitleHandled = (route) => {
-  let router = {...route}
-  let meta = {...route.meta}
+  let router = {
+    ...route
+  }
+  let meta = {
+    ...route.meta
+  }
   let title = ''
   if (meta.title) {
     if (typeof meta.title === 'function') title = meta.title(router)
@@ -137,10 +155,20 @@ export const getHomeRoute = (routers, homeName = 'home') => {
  * @description 如果该newRoute已经存在则不再添加
  */
 export const getNewTagList = (list, newRoute) => {
-  const { name, path, meta } = newRoute
+  const {
+    name,
+    path,
+    meta
+  } = newRoute
   let newList = [...list]
   if (newList.findIndex(item => item.name === name) >= 0) return newList
-  else newList.push({ name, path, meta })
+  else {
+    newList.push({
+      name,
+      path,
+      meta
+    })
+  }
   return newList
 }
 
@@ -215,62 +243,6 @@ export const doCustomTimes = (times, callback) => {
   }
 }
 
-/**
- * @param {Object} file 从上传组件得到的文件对象
- * @returns {Promise} resolve参数是解析后的二维数组
- * @description 从Csv文件中解析出表格，解析成二维数组
- */
-export const getArrayFromFile = (file) => {
-  let nameSplit = file.name.split('.')
-  let format = nameSplit[nameSplit.length - 1]
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader()
-    reader.readAsText(file) // 以文本格式读取
-    let arr = []
-    reader.onload = function (evt) {
-      let data = evt.target.result // 读到的数据
-      let pasteData = data.trim()
-      arr = pasteData.split((/[\n\u0085\u2028\u2029]|\r\n?/g)).map(row => {
-        return row.split('\t')
-      }).map(item => {
-        return item[0].split(',')
-      })
-      if (format === 'csv') resolve(arr)
-      else reject(new Error('[Format Error]:你上传的不是Csv文件'))
-    }
-  })
-}
-
-/**
- * @param {Array} array 表格数据二维数组
- * @returns {Object} { columns, tableData }
- * @description 从二维数组中获取表头和表格数据，将第一行作为表头，用于在iView的表格中展示数据
- */
-export const getTableDataFromArray = (array) => {
-  let columns = []
-  let tableData = []
-  if (array.length > 1) {
-    let titles = array.shift()
-    columns = titles.map(item => {
-      return {
-        title: item,
-        key: item
-      }
-    })
-    tableData = array.map(item => {
-      let res = {}
-      item.forEach((col, i) => {
-        res[titles[i]] = col
-      })
-      return res
-    })
-  }
-  return {
-    columns,
-    tableData
-  }
-}
-
 export const findNodeUpper = (ele, tag) => {
   if (ele.parentNode) {
     if (ele.parentNode.tagName === tag.toUpperCase()) {
@@ -341,4 +313,25 @@ export const localSave = (key, value) => {
 
 export const localRead = (key) => {
   return localStorage.getItem(key) || ''
+}
+
+/**
+ * 获取路由的父级权限
+ * @param {*} to 当前路由
+ * @param {*} notAccessRoutes 路由白名单
+ */
+export function getParentAccess (to, notAccessRoutes = []) {
+  if (to.meta.access) return to
+  if (notAccessRoutes.findIndex(item => item.name == to.name) != -1) return to
+
+  var index = to.matched.findIndex(item => item.path == to.path)
+  if (index <= 0) return false
+  var parent = to.matched.slice(0, index)
+  var access = parent.map(item => {
+    if (item.meta.access) return item.meta.access
+  })
+  access = Array.from(new Set(access.flat())).filter(Boolean)
+  if (access.length > 0)to.meta.access = access
+
+  return to
 }
